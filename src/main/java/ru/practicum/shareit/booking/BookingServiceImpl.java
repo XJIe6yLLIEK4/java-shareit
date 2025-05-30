@@ -20,34 +20,34 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingDto create(Long userId, BookingDto dto) {
-        Booking b = BookingMapper.toModel(dto);
-        b.setBookerId(userId);
-        b.setStatus(BookingStatus.WAITING);
-        Booking saved = bookingRepo.save(b);
+        Booking booking = BookingMapper.toModel(dto);
+        booking.setBookerId(userId);
+        booking.setStatus(BookingStatus.WAITING);
+        Booking saved = bookingRepo.save(booking);
         return BookingMapper.toDto(saved);
     }
 
     @Override
     public BookingDto approve(Long userId, Long bookingId, boolean approved) {
-        Booking b = bookingRepo.findById(bookingId)
+        Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new NoSuchElementException("Booking not found"));
-        Long ownerId = itemRepo.findById(b.getItemId())
+        Long ownerId = itemRepo.findById(booking.getItemId())
                 .orElseThrow(() -> new NoSuchElementException("Item not found")).getOwnerId();
         if (!ownerId.equals(userId)) throw new SecurityException("Only owner can approve");
-        b.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
-        return BookingMapper.toDto(bookingRepo.save(b));
+        booking.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
+        return BookingMapper.toDto(bookingRepo.save(booking));
     }
 
     @Override
     public BookingDto getById(Long userId, Long bookingId) {
-        Booking b = bookingRepo.findById(bookingId)
+        Booking booking = bookingRepo.findById(bookingId)
                 .orElseThrow(() -> new NoSuchElementException("Booking not found"));
-        Long ownerId = itemRepo.findById(b.getItemId())
+        Long ownerId = itemRepo.findById(booking.getItemId())
                 .map(i -> i.getOwnerId()).orElse(null);
-        if (!b.getBookerId().equals(userId) && !ownerId.equals(userId)) {
+        if (!booking.getBookerId().equals(userId) && !ownerId.equals(userId)) {
             throw new SecurityException("Access denied");
         }
-        return BookingMapper.toDto(b);
+        return BookingMapper.toDto(booking);
     }
 
     @Override
@@ -58,7 +58,6 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getAllByOwner(Long userId) {
-        // collect item IDs owned by user
         var itemIds = itemRepo.findAllByOwner(userId).stream().map(i -> i.getId()).collect(Collectors.toSet());
         return bookingRepo.findByOwnerItems(itemIds).stream()
                 .map(BookingMapper::toDto).collect(Collectors.toList());

@@ -14,14 +14,12 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    //TODO Добавить конкретику что именно не так
     @ExceptionHandler({MissingRequestHeaderException.class, MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidationErrors(Exception e) {
         return new ErrorResponse(e.getMessage());
     }
 
-    //TODO Добавить конкретику что именно не найдено
     @ExceptionHandler(NoSuchElementException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFound(NoSuchElementException e) {

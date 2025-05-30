@@ -1,13 +1,13 @@
 package ru.practicum.shareit.booking;
 
 
+import lombok.Builder;
 import lombok.Data;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
 @Data
-@Component
+@Builder
 public class Booking {
     private Long id;
     private Long itemId;

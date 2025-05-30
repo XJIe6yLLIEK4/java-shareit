@@ -7,20 +7,20 @@ import java.time.LocalDateTime;
 public class ItemRequestMapper {
     public static ItemRequestDto toDto(ItemRequest req) {
         if (req == null) return null;
-        ItemRequestDto dto = new ItemRequestDto();
-        dto.setId(req.getId());
-        dto.setDescription(req.getDescription());
-        dto.setCreated(req.getCreated());
-        return dto;
+        return ItemRequestDto.builder()
+                .id(req.getId())
+                .description(req.getDescription())
+                .created(req.getCreated())
+                .build();
     }
 
     public static ItemRequest toModel(ItemRequestDto dto, Long userId) {
         if (dto == null) return null;
-        ItemRequest req = new ItemRequest();
-        req.setId(dto.getId());
-        req.setDescription(dto.getDescription());
-        req.setRequesterId(userId);
-        req.setCreated(LocalDateTime.now());
-        return req;
+        return ItemRequest.builder()
+                .id(dto.getId())
+                .description(dto.getDescription())
+                .requesterId(userId)
+                .created(LocalDateTime.now())
+                .build();
     }
 }
