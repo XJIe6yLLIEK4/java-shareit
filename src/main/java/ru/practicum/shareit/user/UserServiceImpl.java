@@ -2,6 +2,7 @@ package ru.practicum.shareit.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exception.ExceptionSameEmail;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -18,8 +19,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto create(UserDto userDto) {
+        if (repository.existsByEmail(userDto.getEmail())) {
+            throw new ExceptionSameEmail();
+        }
         User user = UserMapper.toModel(userDto);
-        User saved = repository.create(user);
+        User saved = repository.save(user);
         return UserMapper.toDto(saved);
     }
 
@@ -27,9 +31,12 @@ public class UserServiceImpl implements UserService {
     public UserDto update(Long userId, UserDto userDto) {
         User existing = repository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
+        if (repository.existsByEmailAndIdNot(userDto.getEmail(), userId)) {
+            throw new ExceptionSameEmail();
+        }
         if (userDto.getName() != null) existing.setName(userDto.getName());
         if (userDto.getEmail() != null) existing.setEmail(userDto.getEmail());
-        User updated = repository.update(existing);
+        User updated = repository.save(existing);
         return UserMapper.toDto(updated);
     }
 
@@ -49,6 +56,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void delete(Long userId) {
-        repository.delete(userId);
+        repository.deleteById(userId);
     }
 }

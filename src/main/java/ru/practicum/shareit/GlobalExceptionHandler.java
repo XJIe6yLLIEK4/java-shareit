@@ -1,5 +1,6 @@
 package ru.practicum.shareit;
 
+import jakarta.validation.ValidationException;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,7 +15,7 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({MissingRequestHeaderException.class, MethodArgumentNotValidException.class})
+    @ExceptionHandler({ValidationException.class, MissingRequestHeaderException.class, MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidationErrors(Exception e) {
         return new ErrorResponse(e.getMessage());
