@@ -1,13 +1,23 @@
 package ru.practicum.shareit.item.service;
 
+import jakarta.validation.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.BookingServiceImpl;
+import ru.practicum.shareit.booking.BookingStatus;
+import ru.practicum.shareit.comment.Comment;
+import ru.practicum.shareit.comment.CommentDto;
+import ru.practicum.shareit.comment.CommentMapper;
+import ru.practicum.shareit.comment.CommentRepository;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -16,20 +26,26 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final BookingServiceImpl bookingService;
+    private final CommentRepository commentRepository;
 
     @Autowired
-    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository) {
+    public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository,
+                           BookingServiceImpl bookingService, CommentRepository commentRepository) {
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
+        this.bookingService = bookingService;
+        this.commentRepository = commentRepository;
+        ItemMapper.init(commentRepository, bookingService, userRepository);
     }
 
     @Override
     public ItemDto create(Long userId, ItemDto itemDto) {
-        userRepository.findById(userId)
+        User owner = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
-        Item item = ItemMapper.toModel(itemDto, userId);
-        Item saved = itemRepository.create(item);
+        Item item = ItemMapper.toModel(itemDto, owner);
+        Item saved = itemRepository.save(item);
         return ItemMapper.toDto(saved);
     }
 
@@ -39,12 +55,12 @@ public class ItemServiceImpl implements ItemService {
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
         Item existing = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NoSuchElementException("Item not found"));
-        if (!existing.getOwnerId().equals(userId)) throw new SecurityException("Access denied");
+        if (!existing.getOwner().getId().equals(userId)) throw new SecurityException("Access denied");
 
         if (itemDto.getName() != null) existing.setName(itemDto.getName());
         if (itemDto.getDescription() != null) existing.setDescription(itemDto.getDescription());
         if (itemDto.getAvailable() != null) existing.setAvailable(itemDto.getAvailable());
-        Item updated = itemRepository.update(existing);
+        Item updated = itemRepository.save(existing);
         return ItemMapper.toDto(updated);
     }
 
@@ -52,20 +68,41 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto getById(Long userId, Long itemId) {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NoSuchElementException("Item not found"));
-        return ItemMapper.toDto(item);
+        if (userId.equals(item.getOwner().getId())) {
+            return ItemMapper.toDto(item);
+        }
+        return ItemMapper.toSimpleDto(item);
     }
 
     @Override
     public List<ItemDto> getAllByOwner(Long userId) {
-        return itemRepository.findAllByOwner(userId).stream()
-                .map(ItemMapper::toDto)
+        return itemRepository.findByOwnerId(userId).stream()
+                .map(ItemMapper::toSimpleDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<ItemDto> search(String text) {
+        if (text.isEmpty()) {
+            return new ArrayList<>();
+        }
         return itemRepository.search(text).stream()
-                .map(ItemMapper::toDto)
+                .map(ItemMapper::toSimpleDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public CommentDto addComment(Long userId, Long itemId, CommentDto dto) {
+        boolean finished = bookingService.contains(
+                userId, itemId, LocalDateTime.now(), BookingStatus.APPROVED);
+        if (!finished) throw new ValidationException("No completed booking");
+        Comment comment = commentRepository.save(Comment.builder()
+                .text(dto.getText())
+                .authorId(userId)
+                .item(itemRepository.getReferenceById(itemId))
+                .created(LocalDateTime.now())
+                .build());
+        String authorName = userRepository.findById(userId).map(User::getName).orElse("Unknown");
+        return CommentMapper.toDto(comment, authorName);
     }
 }
