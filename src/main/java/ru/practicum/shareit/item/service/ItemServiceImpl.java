@@ -28,15 +28,17 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingServiceImpl bookingService;
     private final CommentRepository commentRepository;
+    private final ItemMapper itemMapper;
 
     @Autowired
     public ItemServiceImpl(ItemRepository itemRepository, UserRepository userRepository,
-                           BookingServiceImpl bookingService, CommentRepository commentRepository) {
+                           BookingServiceImpl bookingService, CommentRepository commentRepository,
+                           ItemMapper itemMapper) {
         this.itemRepository = itemRepository;
         this.userRepository = userRepository;
         this.bookingService = bookingService;
         this.commentRepository = commentRepository;
-        ItemMapper.init(commentRepository, bookingService, userRepository);
+        this.itemMapper = itemMapper;
     }
 
     @Override
@@ -46,7 +48,7 @@ public class ItemServiceImpl implements ItemService {
 
         Item item = ItemMapper.toModel(itemDto, owner);
         Item saved = itemRepository.save(item);
-        return ItemMapper.toDto(saved);
+        return itemMapper.toDto(saved);
     }
 
     @Override
@@ -61,7 +63,7 @@ public class ItemServiceImpl implements ItemService {
         if (itemDto.getDescription() != null) existing.setDescription(itemDto.getDescription());
         if (itemDto.getAvailable() != null) existing.setAvailable(itemDto.getAvailable());
         Item updated = itemRepository.save(existing);
-        return ItemMapper.toDto(updated);
+        return itemMapper.toDto(updated);
     }
 
     @Override
@@ -69,15 +71,15 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NoSuchElementException("Item not found"));
         if (userId.equals(item.getOwner().getId())) {
-            return ItemMapper.toDto(item);
+            return itemMapper.toDto(item);
         }
-        return ItemMapper.toSimpleDto(item);
+        return itemMapper.toSimpleDto(item);
     }
 
     @Override
     public List<ItemDto> getAllByOwner(Long userId) {
         return itemRepository.findByOwnerId(userId).stream()
-                .map(ItemMapper::toSimpleDto)
+                .map(itemMapper::toSimpleDto)
                 .collect(Collectors.toList());
     }
 
@@ -87,7 +89,7 @@ public class ItemServiceImpl implements ItemService {
             return new ArrayList<>();
         }
         return itemRepository.search(text).stream()
-                .map(ItemMapper::toSimpleDto)
+                .map(itemMapper::toSimpleDto)
                 .collect(Collectors.toList());
     }
 
@@ -98,11 +100,10 @@ public class ItemServiceImpl implements ItemService {
         if (!finished) throw new ValidationException("No completed booking");
         Comment comment = commentRepository.save(Comment.builder()
                 .text(dto.getText())
-                .authorId(userId)
+                .author(userRepository.findById(userId).orElseThrow())
                 .item(itemRepository.getReferenceById(itemId))
                 .created(LocalDateTime.now())
                 .build());
-        String authorName = userRepository.findById(userId).map(User::getName).orElse("Unknown");
-        return CommentMapper.toDto(comment, authorName);
+        return CommentMapper.toDto(comment);
     }
 }
