@@ -1,35 +1,51 @@
 package ru.practicum.shareit.booking;
 
-import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
-@Repository
-public class BookingRepository {
-    private final Map<Long, Booking> storage = new HashMap<>();
-    private final AtomicLong idGen = new AtomicLong(1);
+public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    public Booking save(Booking booking) {
-        if (booking.getId() == null) booking.setId(idGen.getAndIncrement());
-        storage.put(booking.getId(), booking);
-        return booking;
-    }
+    @Query("SELECT b FROM Booking b WHERE b.booker.id=:id AND b.start > CURRENT_TIMESTAMP ORDER BY b.start DESC")
+    List<Booking> findFutureByBooker(Long id);
 
-    public Optional<Booking> findById(Long id) {
-        return Optional.ofNullable(storage.get(id));
-    }
+    @Query("SELECT b FROM Booking b WHERE b.item.owner.id=:owner ORDER BY b.start DESC")
+    List<Booking> findByOwner(Long owner);
 
-    public List<Booking> findByBooker(Long userId) {
-        return storage.values().stream()
-                .filter(b -> b.getBookerId().equals(userId))
-                .collect(Collectors.toList());
-    }
+    Optional<Booking> findTopByItemIdAndEndBeforeAndStatusOrderByStartDesc(Long itemId, LocalDateTime now, BookingStatus status);
 
-    public List<Booking> findByOwnerItems(Set<Long> ownerItemIds) {
-        return storage.values().stream()
-                .filter(b -> ownerItemIds.contains(b.getItemId()))
-                .collect(Collectors.toList());
-    }
+    Optional<Booking> findTopByItemIdAndStartAfterAndStatusOrderByStartAsc(Long itemId, LocalDateTime now, BookingStatus status);
+
+    boolean existsByBooker_IdAndItemIdAndEndBeforeAndStatus(
+            Long bookerId, Long itemId, LocalDateTime before, BookingStatus status);
+
+    List<Booking> findByBookerIdOrderByStartDesc(Long userId);
+
+    List<Booking> findByBookerIdAndStartBeforeAndEndAfterOrderByStartDesc(
+            Long userId, LocalDateTime now1, LocalDateTime now2);
+
+    List<Booking> findByBookerIdAndEndBeforeOrderByStartDesc(
+            Long userId, LocalDateTime now);
+
+    List<Booking> findByBookerIdAndStartAfterOrderByStartDesc(
+            Long userId, LocalDateTime now);
+
+    List<Booking> findByBookerIdAndStatusOrderByStartDesc(
+            Long userId, BookingStatus status);
+
+    List<Booking> findByItemOwnerIdOrderByStartDesc(Long userId);
+
+    List<Booking> findByItemOwnerIdAndStartBeforeAndEndAfterOrderByStartDesc(
+            Long userId, LocalDateTime now1, LocalDateTime now2);
+
+    List<Booking> findByItemOwnerIdAndEndBeforeOrderByStartDesc(
+            Long userId, LocalDateTime now);
+
+    List<Booking> findByItemOwnerIdAndStartAfterOrderByStartDesc(
+            Long userId, LocalDateTime now);
+
+    List<Booking> findByItemOwnerIdAndStatusOrderByStartDesc(
+            Long userId, BookingStatus status);
 }
