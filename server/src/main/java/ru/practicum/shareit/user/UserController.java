@@ -1,7 +1,6 @@
 package ru.practicum.shareit.user;
 
 
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +19,7 @@ public class UserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto create(@RequestBody @Valid UserDto dto) {
+    public UserDto create(@RequestBody UserDto dto) {
         return userService.create(dto);
     }
 

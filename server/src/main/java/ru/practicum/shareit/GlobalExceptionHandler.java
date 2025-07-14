@@ -3,11 +3,13 @@ package ru.practicum.shareit;
 import jakarta.validation.ValidationException;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.practicum.shareit.exception.ExceptionSameEmail;
 
 import java.util.NoSuchElementException;
@@ -15,7 +17,12 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({ValidationException.class, MissingRequestHeaderException.class, MethodArgumentNotValidException.class})
+    @ExceptionHandler({ValidationException.class,
+            MissingRequestHeaderException.class,
+            MethodArgumentNotValidException.class,
+            IllegalArgumentException.class,
+            MethodArgumentTypeMismatchException.class,
+            HttpMessageNotReadableException.class,})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidationErrors(Exception e) {
         return new ErrorResponse(e.getMessage());

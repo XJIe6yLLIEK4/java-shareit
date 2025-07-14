@@ -9,7 +9,7 @@ import ru.practicum.shareit.user.User;
 import java.time.LocalDateTime;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 public class BookingResponseDto {
     private Long id;
     private Item item;

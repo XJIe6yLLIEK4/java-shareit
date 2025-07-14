@@ -1,6 +1,5 @@
 package ru.practicum.shareit.item;
 
-import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.comment.CommentDto;
@@ -21,20 +20,20 @@ public class ItemController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ItemDto create(@RequestHeader(value = "X-Sharer-User-Id", required = true) Long userId,
-                          @RequestBody @Valid ItemDto itemDto) {
+                          @RequestBody ItemDto itemDto) {
         return itemService.create(userId, itemDto);
     }
 
     @PatchMapping("/{itemId}")
     public ItemDto update(@RequestHeader(value = "X-Sharer-User-Id", required = true) Long userId,
-                          @PathVariable("itemId") @Valid Long itemId,
+                          @PathVariable("itemId") Long itemId,
                           @RequestBody ItemDto itemDto) {
         return itemService.update(userId, itemId, itemDto);
     }
 
     @GetMapping("/{itemId}")
     public ItemDto getById(@RequestHeader(value = "X-Sharer-User-Id", required = true) Long userId,
-                           @PathVariable("itemId") @Valid Long itemId) {
+                           @PathVariable("itemId") Long itemId) {
         return itemService.getById(userId, itemId);
     }
 
@@ -51,7 +50,7 @@ public class ItemController {
     @PostMapping("/{itemId}/comment")
     public CommentDto addComment(@RequestHeader("X-Sharer-User-Id") Long userId,
                                  @PathVariable("itemId") Long itemId,
-                                 @RequestBody @Valid CommentDto dto) {
+                                 @RequestBody CommentDto dto) {
         return itemService.addComment(userId, itemId, dto);
     }
 }
